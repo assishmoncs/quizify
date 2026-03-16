@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quizify — JSON Powered Quiz Engine</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header id="header">
+    <div class="header-inner">
+      <div class="logo-block">
+        <span class="logo-icon">⬡</span>
+        <div>
+          <h1 class="app-title">Quizify</h1>
+          <p class="app-tagline">Turn JSON into Interactive Quizzes.</p>
+        </div>
+      </div>
+      <div id="timer-display" class="timer-display hidden">
+        <span class="timer-label">TIME</span>
+        <span id="timer-value">00:00</span>
+      </div>
+    </div>
+  </header>
+
+  <main id="app">
+
+    <!-- UPLOAD SECTION -->
+    <section id="upload-section" class="section active">
+      <div class="upload-card">
+        <div class="upload-icon">📂</div>
+        <h2>Upload Your Quiz File</h2>
+        <p class="upload-hint">Supports JSON in multiple formats — auto-parsed automatically.</p>
+        <label class="upload-btn" for="file-input">Choose JSON File</label>
+        <input type="file" id="file-input" accept=".json">
+        <div id="upload-error" class="error-msg hidden"></div>
+        <div class="sample-formats">
+          <p>Accepted formats: array of questions, wrapped object, option1–4 keys, A/B/C/D answers, and more.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODE SELECTION -->
+    <section id="mode-section" class="section hidden">
+      <div class="mode-card">
+        <div class="file-info" id="file-info"></div>
+        <h2>Select Quiz Mode</h2>
+        <div class="mode-buttons">
+          <button class="mode-btn" id="btn-read" onclick="startMode('read')">
+            <span class="mode-icon">📖</span>
+            <span class="mode-name">Read Mode</span>
+            <span class="mode-desc">Browse all questions with answers shown</span>
+          </button>
+          <button class="mode-btn" id="btn-quiz" onclick="startMode('quiz')">
+            <span class="mode-icon">🎯</span>
+            <span class="mode-name">Quiz Mode</span>
+            <span class="mode-desc">Interactive practice — get instant feedback</span>
+          </button>
+          <button class="mode-btn" id="btn-test" onclick="startMode('test')">
+            <span class="mode-icon">📝</span>
+            <span class="mode-name">Test Mode</span>
+            <span class="mode-desc">Exam simulation — answers revealed at end</span>
+          </button>
+        </div>
+        <div class="utilities">
+          <button class="util-btn" onclick="shuffleQuestions()">⇄ Shuffle Questions</button>
+          <button class="util-btn" onclick="shuffleOptions()">⇌ Shuffle Options</button>
+          <div class="timer-config" id="timer-config">
+            <label for="timer-input">Timer (minutes, 0 = off):</label>
+            <input type="number" id="timer-input" value="0" min="0" max="180">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- READ MODE -->
+    <section id="read-section" class="section hidden">
+      <div class="read-header">
+        <button class="back-btn" onclick="goBack()">← Back</button>
+        <h2>Read Mode <span id="read-count"></span></h2>
+      </div>
+      <div id="read-container"></div>
+    </section>
+
+    <!-- QUIZ MODE -->
+    <section id="quiz-section" class="section hidden">
+      <div class="quiz-header">
+        <button class="back-btn" onclick="goBack()">← Back</button>
+        <div class="progress-info">
+          <span id="quiz-progress">Question 1 of N</span>
+          <div class="progress-bar"><div id="progress-fill"></div></div>
+        </div>
+      </div>
+      <div id="quiz-navigator" class="question-navigator"></div>
+      <div id="quiz-container" class="question-card"></div>
+      <div class="quiz-controls">
+        <button class="ctrl-btn skip-btn" id="quiz-skip" onclick="quizSkip()">Skip</button>
+        <button class="ctrl-btn next-btn hidden" id="quiz-next" onclick="quizNext()">Next →</button>
+      </div>
+    </section>
+
+    <!-- TEST MODE -->
+    <section id="test-section" class="section hidden">
+      <div class="quiz-header">
+        <button class="back-btn" onclick="goBack()">← Back</button>
+        <div class="progress-info">
+          <span id="test-progress">Question 1 of N</span>
+          <div class="progress-bar"><div id="test-progress-fill"></div></div>
+        </div>
+      </div>
+      <div id="test-navigator" class="question-navigator"></div>
+      <div id="test-container" class="question-card"></div>
+      <div class="quiz-controls">
+        <button class="ctrl-btn prev-btn" id="test-prev" onclick="testPrev()">← Prev</button>
+        <button class="ctrl-btn next-btn" id="test-next" onclick="testNext()">Next →</button>
+        <button class="ctrl-btn submit-btn" id="test-submit" onclick="testSubmit()">Submit Test</button>
+      </div>
+    </section>
+
+    <!-- RESULTS SCREEN -->
+    <section id="result-section" class="section hidden">
+      <div class="result-card">
+        <div class="result-header">
+          <div class="result-score-circle">
+            <span id="result-percent">0%</span>
+          </div>
+          <h2 id="result-title">Quiz Complete!</h2>
+        </div>
+        <div class="result-stats">
+          <div class="stat-box correct"><span id="result-correct">0</span><label>Correct</label></div>
+          <div class="stat-box wrong"><span id="result-wrong">0</span><label>Wrong</label></div>
+          <div class="stat-box skipped"><span id="result-skipped">0</span><label>Skipped</label></div>
+          <div class="stat-box total"><span id="result-total">0</span><label>Total</label></div>
+        </div>
+        <div class="result-actions">
+          <button class="ctrl-btn" onclick="goBack()">Try Again</button>
+          <button class="ctrl-btn" onclick="exportResult()">Export Result</button>
+          <button class="ctrl-btn" onclick="resetQuiz()">Reset Quiz</button>
+        </div>
+        <div id="review-container"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
