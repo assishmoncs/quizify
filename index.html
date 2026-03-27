@@ -3,145 +3,302 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quizify — JSON Powered Quiz Engine</title>
+  <meta name="description" content="Quizify converts JSON quiz files into clean read, quiz, and test experiences in the browser.">
+  <title>Quizify | JSON to Quiz Converter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
-  <header id="header">
-    <div class="header-inner">
-      <div class="logo-block">
-        <span class="logo-icon">⬡</span>
+<body data-theme="light">
+  <div class="page-shell">
+    <header id="header">
+      <div class="header-inner">
+        <div class="brand-block">
+          <div class="logo-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" role="img">
+              <path d="M7 5h10a2 2 0 0 1 2 2v10l-4-2-4 2-4-2-4 2V7a2 2 0 0 1 2-2h2Z" fill="currentColor" opacity=".22"></path>
+              <path d="M7 5h10a2 2 0 0 1 2 2v10l-4-2-4 2-4-2-4 2V7a2 2 0 0 1 2-2h2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+          </div>
+          <div>
+            <p class="eyebrow">JSON to Quiz Converter</p>
+            <h1 class="app-title">Quizify</h1>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button id="theme-toggle" class="icon-btn" type="button" aria-label="Toggle dark mode">
+            <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.8"></circle>
+              <path d="M12 2.8v2.4M12 18.8v2.4M21.2 12h-2.4M5.2 12H2.8M18.5 5.5l-1.7 1.7M7.2 16.8l-1.7 1.7M18.5 18.5l-1.7-1.7M7.2 7.2 5.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+            </svg>
+            <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a8.2 8.2 0 1 0 9.5 9.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path>
+            </svg>
+          </button>
+          <div id="timer-display" class="timer-display hidden" aria-live="polite">
+            <span class="timer-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="13" r="7" fill="none" stroke="currentColor" stroke-width="1.8"></circle>
+                <path d="M12 13V9.2m0-4.4h4m-8 0h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+              </svg>
+            </span>
+            <span class="timer-label">Timer</span>
+            <span id="timer-value">00:00</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main id="app">
+      <section class="hero-panel">
         <div>
-          <h1 class="app-title">Quizify</h1>
-          <p class="app-tagline">Turn JSON into Interactive Quizzes.</p>
+          <p class="hero-kicker">Flexible quiz ingestion</p>
+          <h2>Upload JSON, review the structure, and launch it instantly as a study set or timed test.</h2>
         </div>
-      </div>
-      <div id="timer-display" class="timer-display hidden">
-        <span class="timer-label">TIME</span>
-        <span id="timer-value">00:00</span>
-      </div>
-    </div>
-  </header>
-
-  <main id="app">
-
-    <!-- UPLOAD SECTION -->
-    <section id="upload-section" class="section active">
-      <div class="upload-card">
-        <div class="upload-icon">📂</div>
-        <h2>Upload Your Quiz File</h2>
-        <p class="upload-hint">Supports JSON in multiple formats — auto-parsed automatically.</p>
-        <label class="upload-btn" for="file-input">Choose JSON File</label>
-        <input type="file" id="file-input" accept=".json">
-        <div id="upload-error" class="error-msg hidden"></div>
-        <div class="sample-formats">
-          <p>Accepted formats: array of questions, wrapped object, option1–4 keys, A/B/C/D answers, and more.</p>
+        <div class="hero-meta">
+          <span class="meta-pill">Offline</span>
+          <span class="meta-pill">No setup</span>
+          <span class="meta-pill">Multiple JSON schemas</span>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- MODE SELECTION -->
-    <section id="mode-section" class="section hidden">
-      <div class="mode-card">
-        <div class="file-info" id="file-info"></div>
-        <h2>Select Quiz Mode</h2>
-        <div class="mode-buttons">
-          <button class="mode-btn" id="btn-read" onclick="startMode('read')">
-            <span class="mode-icon">📖</span>
-            <span class="mode-name">Read Mode</span>
-            <span class="mode-desc">Browse all questions with answers shown</span>
-          </button>
-          <button class="mode-btn" id="btn-quiz" onclick="startMode('quiz')">
-            <span class="mode-icon">🎯</span>
-            <span class="mode-name">Quiz Mode</span>
-            <span class="mode-desc">Interactive practice — get instant feedback</span>
-          </button>
-          <button class="mode-btn" id="btn-test" onclick="startMode('test')">
-            <span class="mode-icon">📝</span>
-            <span class="mode-name">Test Mode</span>
-            <span class="mode-desc">Exam simulation — answers revealed at end</span>
-          </button>
-        </div>
-        <div class="utilities">
-          <button class="util-btn" onclick="shuffleQuestions()">⇄ Shuffle Questions</button>
-          <button class="util-btn" onclick="shuffleOptions()">⇌ Shuffle Options</button>
-          <div class="timer-config" id="timer-config">
-            <label for="timer-input">Timer (minutes, 0 = off):</label>
-            <input type="number" id="timer-input" value="0" min="0" max="180">
+      <section id="upload-section" class="section active">
+        <div class="upload-card">
+          <div class="upload-topline">
+            <span class="upload-badge">Input</span>
+            <p id="upload-summary" class="upload-summary"></p>
+          </div>
+          <h2>Load a quiz JSON file</h2>
+          <p class="upload-hint">Quizify preserves the formats it already supported and now accepts more real-world quiz JSON variations as well.</p>
+          <label class="upload-btn" for="file-input">
+            <span class="btn-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 16V5m0 0 4 4m-4-4L8 9M5 19h14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </span>
+            <span>Choose JSON File</span>
+          </label>
+          <input type="file" id="file-input" accept=".json,application/json">
+          <div id="upload-error" class="error-msg hidden" role="alert"></div>
+          <div class="format-showcase">
+            <div class="format-card">
+              <span class="format-title">Collections</span>
+              <p>Arrays, wrapped question lists, keyed maps, and nested quiz containers.</p>
+            </div>
+            <div class="format-card">
+              <span class="format-title">Options</span>
+              <p>Option arrays, option objects, numbered fields, and A-F letter fields.</p>
+            </div>
+            <div class="format-card">
+              <span class="format-title">Answers</span>
+              <p>Indexes, letters, exact option text, boolean values, or option objects flagged as correct.</p>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- READ MODE -->
-    <section id="read-section" class="section hidden">
-      <div class="read-header">
-        <button class="back-btn" onclick="goBack()">← Back</button>
-        <h2>Read Mode <span id="read-count"></span></h2>
-      </div>
-      <div id="read-container"></div>
-    </section>
-
-    <!-- QUIZ MODE -->
-    <section id="quiz-section" class="section hidden">
-      <div class="quiz-header">
-        <button class="back-btn" onclick="goBack()">← Back</button>
-        <div class="progress-info">
-          <span id="quiz-progress">Question 1 of N</span>
-          <div class="progress-bar"><div id="progress-fill"></div></div>
-        </div>
-      </div>
-      <div id="quiz-navigator" class="question-navigator"></div>
-      <div id="quiz-container" class="question-card"></div>
-      <div class="quiz-controls">
-        <button class="ctrl-btn skip-btn" id="quiz-skip" onclick="quizSkip()">Skip</button>
-        <button class="ctrl-btn next-btn hidden" id="quiz-next" onclick="quizNext()">Next →</button>
-      </div>
-    </section>
-
-    <!-- TEST MODE -->
-    <section id="test-section" class="section hidden">
-      <div class="quiz-header">
-        <button class="back-btn" onclick="goBack()">← Back</button>
-        <div class="progress-info">
-          <span id="test-progress">Question 1 of N</span>
-          <div class="progress-bar"><div id="test-progress-fill"></div></div>
-        </div>
-      </div>
-      <div id="test-navigator" class="question-navigator"></div>
-      <div id="test-container" class="question-card"></div>
-      <div class="quiz-controls">
-        <button class="ctrl-btn prev-btn" id="test-prev" onclick="testPrev()">← Prev</button>
-        <button class="ctrl-btn next-btn" id="test-next" onclick="testNext()">Next →</button>
-        <button class="ctrl-btn submit-btn" id="test-submit" onclick="testSubmit()">Submit Test</button>
-      </div>
-    </section>
-
-    <!-- RESULTS SCREEN -->
-    <section id="result-section" class="section hidden">
-      <div class="result-card">
-        <div class="result-header">
-          <div class="result-score-circle">
-            <span id="result-percent">0%</span>
+      <section id="mode-section" class="section hidden">
+        <div class="mode-card">
+          <div class="mode-card-head">
+            <div>
+              <p class="panel-label">Ready</p>
+              <div id="file-info" class="file-info"></div>
+            </div>
+            <div class="mode-summary" id="parser-details"></div>
           </div>
-          <h2 id="result-title">Quiz Complete!</h2>
+          <h2>Choose how you want to use this quiz</h2>
+          <div class="mode-buttons">
+            <button class="mode-btn" type="button" id="btn-read" onclick="startMode('read')">
+              <span class="mode-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M5 6.5A2.5 2.5 0 0 1 7.5 4H19v15H7.5A2.5 2.5 0 0 0 5 21V6.5Zm0 0V19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+              </span>
+              <span class="mode-copy">
+                <span class="mode-name">Read Mode</span>
+                <span class="mode-desc">Review every question with answers and explanations visible.</span>
+              </span>
+            </button>
+            <button class="mode-btn" type="button" id="btn-quiz" onclick="startMode('quiz')">
+              <span class="mode-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 4v3m0 10v3m8-8h-3M7 12H4m13.66 5.66-2.12-2.12M8.46 8.46 6.34 6.34m11.32 0-2.12 2.12M8.46 15.54l-2.12 2.12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+                  <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"></circle>
+                </svg>
+              </span>
+              <span class="mode-copy">
+                <span class="mode-name">Quiz Mode</span>
+                <span class="mode-desc">Practice interactively with immediate feedback after each answer.</span>
+              </span>
+            </button>
+            <button class="mode-btn" type="button" id="btn-test" onclick="startMode('test')">
+              <span class="mode-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M8 4h8m-7 4h6m-8 11h10a2 2 0 0 0 2-2V7l-3-3H7a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+              </span>
+              <span class="mode-copy">
+                <span class="mode-name">Test Mode</span>
+                <span class="mode-desc">Answer all questions in one pass and submit once at the end.</span>
+              </span>
+            </button>
+          </div>
+          <div class="utilities">
+            <button class="util-btn" type="button" onclick="shuffleQuestions()">
+              <span class="btn-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M16 4h4v4M8 20H4v-4m0 0 6-6m4-4 6-6m0 0v4h-4m-8 12-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+              </span>
+              <span>Shuffle Questions</span>
+            </button>
+            <button class="util-btn" type="button" onclick="shuffleOptions()">
+              <span class="btn-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M4 7h9m0 0-2.5-2.5M13 7 10.5 9.5M20 17h-9m0 0 2.5-2.5M11 17l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+              </span>
+              <span>Shuffle Options</span>
+            </button>
+            <div class="timer-config" id="timer-config">
+              <label for="timer-input">Timer in minutes</label>
+              <input type="number" id="timer-input" value="0" min="0" max="180" inputmode="numeric">
+            </div>
+          </div>
         </div>
-        <div class="result-stats">
-          <div class="stat-box correct"><span id="result-correct">0</span><label>Correct</label></div>
-          <div class="stat-box wrong"><span id="result-wrong">0</span><label>Wrong</label></div>
-          <div class="stat-box skipped"><span id="result-skipped">0</span><label>Skipped</label></div>
-          <div class="stat-box total"><span id="result-total">0</span><label>Total</label></div>
-        </div>
-        <div class="result-actions">
-          <button class="ctrl-btn" onclick="goBack()">Try Again</button>
-          <button class="ctrl-btn" onclick="exportResult()">Export Result</button>
-          <button class="ctrl-btn" onclick="resetQuiz()">Reset Quiz</button>
-        </div>
-        <div id="review-container"></div>
-      </div>
-    </section>
+      </section>
 
-  </main>
+      <section id="read-section" class="section hidden">
+        <div class="section-header">
+          <button class="back-btn" type="button" onclick="goBack()">
+            <span class="btn-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="m10 6-6 6 6 6M4 12h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </span>
+            <span>Back</span>
+          </button>
+          <div>
+            <p class="panel-label">Study View</p>
+            <h2>Read Mode</h2>
+          </div>
+          <span id="read-count" class="section-count"></span>
+        </div>
+        <div id="read-container"></div>
+      </section>
+
+      <section id="quiz-section" class="section hidden">
+        <div class="section-header compact">
+          <button class="back-btn" type="button" onclick="goBack()">
+            <span class="btn-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="m10 6-6 6 6 6M4 12h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </span>
+            <span>Back</span>
+          </button>
+          <div class="progress-info">
+            <span id="quiz-progress">Question 1 of N</span>
+            <div class="progress-bar"><div id="progress-fill"></div></div>
+          </div>
+        </div>
+        <div id="quiz-container" class="question-card"></div>
+        <div class="quiz-controls">
+          <button class="ctrl-btn skip-btn" type="button" id="quiz-skip" onclick="quizSkip()">
+            <span class="btn-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+              </svg>
+            </span>
+            <span>Skip</span>
+          </button>
+          <button class="ctrl-btn next-btn hidden" type="button" id="quiz-next" onclick="quizNext()">
+            <span>Next</span>
+            <span class="btn-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M5 12h14m-5-5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </span>
+          </button>
+        </div>
+      </section>
+
+      <section id="test-section" class="section hidden">
+        <div class="section-header compact">
+          <button class="back-btn" type="button" onclick="goBack()">
+            <span class="btn-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="m10 6-6 6 6 6M4 12h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </span>
+            <span>Back</span>
+          </button>
+          <div class="progress-info">
+            <span id="test-progress">0 of 0 answered</span>
+            <div class="progress-bar"><div id="test-progress-fill"></div></div>
+          </div>
+        </div>
+        <div id="test-container" class="test-sheet"></div>
+        <div class="quiz-controls">
+          <button class="ctrl-btn submit-btn" type="button" id="test-submit" onclick="testSubmit()">
+            <span class="btn-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="m5 12 4.2 4.2L19 6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </span>
+            <span>Submit Test</span>
+          </button>
+        </div>
+      </section>
+
+      <section id="result-section" class="section hidden">
+        <div class="result-card">
+          <div class="result-header">
+            <div class="result-score-circle">
+              <span id="result-percent">0%</span>
+            </div>
+            <div>
+              <p class="panel-label">Summary</p>
+              <h2 id="result-title">Quiz Complete</h2>
+            </div>
+          </div>
+          <div class="result-stats">
+            <div class="stat-box correct"><span id="result-correct">0</span><label>Correct</label></div>
+            <div class="stat-box wrong"><span id="result-wrong">0</span><label>Wrong</label></div>
+            <div class="stat-box skipped"><span id="result-skipped">0</span><label>Skipped</label></div>
+            <div class="stat-box total"><span id="result-total">0</span><label>Total</label></div>
+          </div>
+          <div class="result-actions">
+            <button class="ctrl-btn" type="button" onclick="goBack()">
+              <span class="btn-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="m10 6-6 6 6 6M4 12h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+              </span>
+              <span>Try Again</span>
+            </button>
+            <button class="ctrl-btn" type="button" onclick="exportResult()">
+              <span class="btn-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M12 15V4m0 0 4 4m-4-4L8 8m-3 8v3h14v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+              </span>
+              <span>Export Result</span>
+            </button>
+            <button class="ctrl-btn" type="button" onclick="resetQuiz()">
+              <span class="btn-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M20 11a8 8 0 1 1-2.34-5.66M20 4v6h-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+              </span>
+              <span>Reset Quiz</span>
+            </button>
+          </div>
+          <div id="review-container"></div>
+        </div>
+      </section>
+    </main>
+  </div>
 
   <script src="js/app.js"></script>
 </body>

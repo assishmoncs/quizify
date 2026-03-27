@@ -1,36 +1,30 @@
 # Quizify
 
-Quizify is a simple web app that converts JSON quiz files into interactive quizzes.
+Quizify is a lightweight browser-based JSON to quiz converter. It loads quiz data directly from a JSON file and presents it in Read, Quiz, or Test mode without any setup.
 
 ## Features
 
-- Upload JSON quiz files
-- Supports multiple JSON quiz formats
-- Read Mode (study view)
-- Quiz Mode (practice with instant feedback)
-- Test Mode (exam simulation)
-- Works completely offline
+- Supports multiple quiz JSON structures, including arrays, wrapped collections, keyed objects, numbered options, lettered options, and option objects
+- Accepts answer values as indexes, letters, exact option text, booleans, or options marked as correct
+- Includes Read Mode, Quiz Mode, and timed Test Mode
+- Provides result export, question shuffling, and option shuffling
+- Runs fully in the browser
 
-## Example JSON Format
+## Supported JSON Patterns
 
-```json
-{
- "question":"Capital of France?",
- "option1":"Paris",
- "option2":"London",
- "option3":"Berlin",
- "option4":"Rome",
- "correct_answer":"A",
- "explanation":"Paris is the capital of France"
-}
-```
+Quizify can parse quiz data from common structures such as:
 
-## How to Run
+- Arrays of question objects
+- Objects containing `questions`, `quiz`, `items`, `data`, or `entries`
+- Standalone question objects or keyed question maps
+- Options provided through arrays, objects, `option1..10`, `choice1..10`, or `A..F`
+- Correct answers provided as numeric index, letter, matching option text, boolean, or option object metadata
 
-1. Download or clone the repository  
-2. Open `index.html` in a browser
+## Usage
 
-No installation required.
+1. Open `index.html` in a modern browser.
+2. Upload a `.json` file.
+3. Choose a mode and start the quiz.
 
 ## License
 
