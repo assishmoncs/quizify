@@ -527,6 +527,31 @@ function buildParserDetailsMarkup() {
   `;
 }
 
+function buildOptionsMarkup(options, renderOption) {
+  return `
+    <div class="options-grid">
+      ${options.map(renderOption).join('')}
+    </div>
+  `;
+}
+
+function buildQuestionHeader(questionNumber, questionText) {
+  return `
+    <div class="q-number">Question ${questionNumber}</div>
+    <div class="q-text">${esc(questionText)}</div>
+  `;
+}
+
+function buildReviewMarkup(state, index, questionText, userAnswer, correctAnswer, explanation) {
+  return `
+    <div class="r-badge">${stateLabel(state)}</div>
+    <div class="r-question">Q${index + 1}. ${esc(questionText)}</div>
+    <div class="r-answer">Your answer: <strong>${esc(userAnswer)}</strong></div>
+    <div class="r-answer">Correct answer: <strong>${esc(correctAnswer)}</strong></div>
+    ${renderExplanation(explanation)}
+  `;
+}
+
 function clearMessages() {
   dom.uploadError.textContent = '';
   dom.uploadError.classList.add('hidden');
@@ -699,16 +724,11 @@ function startRead() {
     const card = document.createElement('article');
     card.className = 'read-question';
     card.innerHTML = `
-      <div class="q-number">Question ${index + 1}</div>
-      <div class="q-text">${esc(question.question)}</div>
-      <div class="options-grid">
-        ${question.options
-          .map((option, optionIndex) => {
-            const className = optionIndex === question.correct ? 'opt-btn correct' : 'opt-btn';
-            return `<button class="${className}" disabled>${optionLabel(optionIndex)} ${esc(option)}</button>`;
-          })
-          .join('')}
-      </div>
+      ${buildQuestionHeader(index + 1, question.question)}
+      ${buildOptionsMarkup(question.options, (option, optionIndex) => {
+        const className = optionIndex === question.correct ? 'opt-btn correct' : 'opt-btn';
+        return `<button class="${className}" disabled>${optionLabel(optionIndex)} ${esc(option)}</button>`;
+      })}
       ${renderExplanation(question.explanation)}
     `;
     dom.readContainer.appendChild(card);
@@ -741,25 +761,20 @@ function renderQuizQuestion() {
   dom.quizFill.style.width = `${((quizIndex + 1) / total) * 100}%`;
 
   dom.quizContainer.innerHTML = `
-    <div class="q-number">Question ${quizIndex + 1}</div>
-    <div class="q-text">${esc(question.question)}</div>
-    <div class="options-grid">
-      ${question.options
-        .map((option, index) => {
-          const classes = ['opt-btn'];
-          if (locked) {
-            if (index === question.correct) {
-              classes.push('correct');
-            } else if (index === selectedAnswer) {
-              classes.push('selected-wrong');
-            } else if (selectedAnswer === -1) {
-              classes.push('skipped-option');
-            }
-          }
-          return `<button class="${classes.join(' ')}" ${locked ? 'disabled' : ''} onclick="quizAnswer(${index})">${optionLabel(index)} ${esc(option)}</button>`;
-        })
-        .join('')}
-    </div>
+    ${buildQuestionHeader(quizIndex + 1, question.question)}
+    ${buildOptionsMarkup(question.options, (option, index) => {
+      const classes = ['opt-btn'];
+      if (locked) {
+        if (index === question.correct) {
+          classes.push('correct');
+        } else if (index === selectedAnswer) {
+          classes.push('selected-wrong');
+        } else if (selectedAnswer === -1) {
+          classes.push('skipped-option');
+        }
+      }
+      return `<button class="${classes.join(' ')}" ${locked ? 'disabled' : ''} onclick="quizAnswer(${index})">${optionLabel(index)} ${esc(option)}</button>`;
+    })}
     ${locked ? renderExplanation(question.explanation) : ''}
   `;
 
@@ -811,19 +826,14 @@ function renderTestSheet() {
     const card = document.createElement('article');
     card.className = `test-card${selectedAnswer !== null ? ' answered' : ''}`;
     card.innerHTML = `
-      <div class="q-number">Question ${questionIndex + 1}</div>
-      <div class="q-text">${esc(question.question)}</div>
-      <div class="options-grid">
-        ${question.options
-          .map((option, optionIndex) => {
-            const classes = ['opt-btn'];
-            if (selectedAnswer === optionIndex) {
-              classes.push('selected');
-            }
-            return `<button class="${classes.join(' ')}" type="button" onclick="testAnswer(${questionIndex}, ${optionIndex})">${optionLabel(optionIndex)} ${esc(option)}</button>`;
-          })
-          .join('')}
-      </div>
+      ${buildQuestionHeader(questionIndex + 1, question.question)}
+      ${buildOptionsMarkup(question.options, (option, optionIndex) => {
+        const classes = ['opt-btn'];
+        if (selectedAnswer === optionIndex) {
+          classes.push('selected');
+        }
+        return `<button class="${classes.join(' ')}" type="button" onclick="testAnswer(${questionIndex}, ${optionIndex})">${optionLabel(optionIndex)} ${esc(option)}</button>`;
+      })}
     `;
     dom.testContainer.appendChild(card);
   });
@@ -938,13 +948,14 @@ function showResult(mode) {
 
     const card = document.createElement('article');
     card.className = `review-item r-${state}`;
-    card.innerHTML = `
-      <div class="r-badge">${stateLabel(state)}</div>
-      <div class="r-question">Q${index + 1}. ${esc(question.question)}</div>
-      <div class="r-answer">Your answer: <strong>${esc(userAnswer)}</strong></div>
-      <div class="r-answer">Correct answer: <strong>${esc(question.options[question.correct])}</strong></div>
-      ${renderExplanation(question.explanation)}
-    `;
+    card.innerHTML = buildReviewMarkup(
+      state,
+      index,
+      question.question,
+      userAnswer,
+      question.options[question.correct],
+      question.explanation
+    );
     dom.reviewContainer.appendChild(card);
   });
 

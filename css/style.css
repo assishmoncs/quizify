@@ -396,6 +396,7 @@ body.immersive-mode .hero-panel {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-height: 44px;
   gap: 10px;
   border-radius: var(--radius-pill);
   cursor: pointer;
@@ -466,6 +467,13 @@ body.immersive-mode .hero-panel {
 .explanation,
 .info-note {
   color: var(--text-soft);
+}
+
+.mode-desc,
+.r-question,
+.r-answer,
+.explanation span {
+  overflow-wrap: anywhere;
 }
 
 .file-info {
@@ -930,5 +938,32 @@ body.immersive-mode .hero-panel {
   .quiz-controls > *,
   .result-actions > * {
     width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-title {
+    font-size: 1.5rem;
+  }
+
+  .hero-panel h2 {
+    font-size: 1.28rem;
+    line-height: 1.25;
+  }
+
+  .upload-hint,
+  .mode-desc {
+    font-size: 0.94rem;
+  }
+
+  .mode-btn,
+  .opt-btn {
+    padding: 14px;
+  }
+
+  .format-showcase,
+  .options-grid,
+  .result-stats {
+    grid-template-columns: 1fr;
   }
 }
