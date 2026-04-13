@@ -507,24 +507,11 @@ function buildLoadedText() {
 }
 
 function buildParserDetailsMarkup() {
-  const supported = [
-    'Arrays of question objects',
-    'Wrapped collections like questions, quiz, items, data, or entries',
-    'Standalone question objects or keyed question maps',
-    'Options as arrays, keyed objects, option1..10, choice1..10, or A..F fields',
-    'Answers as index, 1-based number, letter, option text, boolean, or option objects marked correct'
-  ];
-
   const warningMarkup = parseMeta.warnings
     .map((warning) => `<p class="info-note warning-note">${esc(warning)}</p>`)
     .join('');
 
-  return `
-    <div class="info-chip-row">
-      ${supported.map((item) => `<span class="info-chip">${esc(item)}</span>`).join('')}
-    </div>
-    ${warningMarkup}
-  `;
+  return warningMarkup;
 }
 
 function buildOptionsMarkup(options, renderOption) {
