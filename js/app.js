@@ -585,7 +585,9 @@ function buildLoadedText() {
   const skippedText = state.parseMeta.skipped ? `, ${state.parseMeta.skipped} skipped` : '';
   const filteredCount = state.filteredQuestions.length;
   const totalCount = state.originalQuestions.length;
-  const filterText = filteredCount === totalCount ? '' : ` (${filteredCount} match current filters)`;
+  const filterText = filteredCount === totalCount
+    ? ''
+    : ` (${filteredCount} question${filteredCount === 1 ? '' : 's'} match${filteredCount === 1 ? 'es' : ''} current filters)`;
   return `Loaded ${totalCount} question${totalCount === 1 ? '' : 's'} from ${state.fileName}${skippedText}${filterText}.`;
 }
 
@@ -681,7 +683,7 @@ function renderFilterControls() {
       const input = document.createElement('input');
       input.type = 'checkbox';
       input.id = optionId;
-      input.checked = state.filterSelections[key]?.has(value) || false;
+      input.checked = state.filterSelections[key]?.has(value) ?? false;
       const text = document.createElement('span');
       text.textContent = value;
       item.appendChild(input);
@@ -783,13 +785,13 @@ function buildQuestionMetaMarkup(meta) {
     const value = meta[key];
     if (Array.isArray(value)) {
       for (const item of value) {
-        const tag = trimTag(item);
+        const tag = typeof item === 'string' ? item.trim() : '';
         if (tag) {
           tags.push(tag);
         }
       }
     } else {
-      const tag = trimTag(value);
+      const tag = typeof value === 'string' ? value.trim() : '';
       if (tag) {
         tags.push(tag);
       }
@@ -801,13 +803,6 @@ function buildQuestionMetaMarkup(meta) {
   }
 
   return `<div class="q-meta-tags">${tags.map((tag) => `<span class="q-meta-tag">${esc(tag)}</span>`).join('')}</div>`;
-}
-
-function trimTag(value) {
-  if (typeof value !== 'string') {
-    return '';
-  }
-  return value.trim();
 }
 
 function buildReviewMarkup(state, index, questionText, userAnswer, correctAnswer, explanation) {
@@ -891,7 +886,7 @@ function resetQuiz() {
 function cloneQuestions(source) {
   return source.map((question) => ({
     ...question,
-    options: question.options.map((option) => cloneMetaFallback(option)),
+    options: [...question.options],
     meta: cloneMeta(question.meta)
   }));
 }
