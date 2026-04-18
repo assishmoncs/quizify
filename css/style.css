@@ -799,6 +799,26 @@ body.immersive-mode .hero-panel {
   color: var(--text-faint);
 }
 
+.q-meta-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.q-meta-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent-strong);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
 .q-text {
   margin: 0 0 24px;
   font-size: clamp(1.1rem, 2vw, 1.35rem);

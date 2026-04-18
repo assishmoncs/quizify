@@ -18,6 +18,7 @@ const CONSTANTS = {
   quizCollections: ['questions', 'quiz', 'quizzes', 'items', 'data', 'entries'],
   questionTextKeys: ['question', 'q', 'ques', 'text', 'prompt', 'title', 'Question'],
   explanationKeys: ['explanation', 'explain', 'rationale', 'reason', 'note', 'details'],
+  metadataKeys: ['topic', 'difficulty', 'tag', 'chapter', 'module', 'subject'],
   answerKeys: [
     'correct', 'answer', 'correct_answer', 'answer_index', 'answer_letter', 'answer_text',
     'correctAnswer', 'correctIndex', 'correctOption', 'correct_choice', 'correctChoice',
@@ -275,7 +276,8 @@ function normalizeQuestion(item) {
     question: String(question).trim(),
     options,
     correct,
-    explanation: explanation ? String(explanation).trim() : null
+    explanation: explanation ? String(explanation).trim() : null,
+    meta: extractQuestionMeta(item)
   };
 }
 
@@ -494,6 +496,57 @@ function getFirstPresentValue(source, keys) {
   return undefined;
 }
 
+function getValueByCaseInsensitiveKey(source, targetKey) {
+  const target = targetKey.toLowerCase();
+  for (const [key, value] of Object.entries(source)) {
+    if (key.toLowerCase() === target) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+function normalizeMetaValue(value) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  if (Array.isArray(value)) {
+    const values = value
+      .map(normalizeMetaValue)
+      .flat()
+      .filter((entry) => typeof entry === 'string' && entry.length);
+    return values.length ? values : null;
+  }
+
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    const normalized = String(value).trim();
+    return normalized ? normalized : null;
+  }
+
+  if (typeof value === 'object') {
+    const text = getFirstPresentValue(value, ['text', 'label', 'name', 'title', 'value']);
+    if (text !== undefined && text !== null) {
+      const normalized = String(text).trim();
+      return normalized ? normalized : null;
+    }
+  }
+
+  return null;
+}
+
+function extractQuestionMeta(item) {
+  const meta = {};
+  for (const key of CONSTANTS.metadataKeys) {
+    const value = getValueByCaseInsensitiveKey(item, key);
+    const normalized = normalizeMetaValue(value);
+    if (normalized !== null) {
+      meta[key] = normalized;
+    }
+  }
+  return meta;
+}
+
 function isQuestionLike(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return false;
@@ -523,11 +576,39 @@ function buildParserDetailsMarkup() {
 
 
 
-function buildQuestionHeader(questionNumber, questionText) {
+function buildQuestionHeader(questionNumber, questionText, meta) {
+  const metaMarkup = buildQuestionMetaMarkup(meta);
   return `
     <div class="q-number">Question ${questionNumber}</div>
+    ${metaMarkup}
     <div class="q-text">${esc(questionText)}</div>
   `;
+}
+
+function buildQuestionMetaMarkup(meta) {
+  const tags = [];
+  if (!meta || typeof meta !== 'object') {
+    return '';
+  }
+
+  for (const key of CONSTANTS.metadataKeys) {
+    const value = meta[key];
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (typeof item === 'string' && item.trim()) {
+          tags.push(item.trim());
+        }
+      }
+    } else if (typeof value === 'string' && value.trim()) {
+      tags.push(value.trim());
+    }
+  }
+
+  if (!tags.length) {
+    return '';
+  }
+
+  return `<div class="q-meta-tags">${tags.map((tag) => `<span class="q-meta-tag">${esc(tag)}</span>`).join('')}</div>`;
 }
 
 function buildReviewMarkup(state, index, questionText, userAnswer, correctAnswer, explanation) {
@@ -606,8 +687,22 @@ function resetQuiz() {
 function cloneQuestions(source) {
   return source.map((question) => ({
     ...question,
-    options: [...question.options]
+    options: [...question.options],
+    meta: cloneMeta(question.meta)
   }));
+}
+
+function cloneMeta(meta) {
+  if (!meta || typeof meta !== 'object') {
+    return {};
+  }
+
+  const cloned = {};
+  for (const key of Object.keys(meta)) {
+    const value = meta[key];
+    cloned[key] = Array.isArray(value) ? [...value] : value;
+  }
+  return cloned;
 }
 
 function shuffleArray(items) {
@@ -725,7 +820,7 @@ function startRead() {
       optionsHtml += `<button class="${className}" disabled>${optionLabel(j)} ${esc(q.options[j])}</button>`;
     }
     card.innerHTML = `
-      ${buildQuestionHeader(i + 1, q.question)}
+      ${buildQuestionHeader(i + 1, q.question, q.meta)}
       <div class="options-grid">${optionsHtml}</div>
       ${renderExplanation(q.explanation)}
     `;
@@ -771,7 +866,7 @@ function renderQuizQuestion() {
   }
 
   d.quizContainer.innerHTML = `
-    ${buildQuestionHeader(state.quizIndex + 1, q.question)}
+    ${buildQuestionHeader(state.quizIndex + 1, q.question, q.meta)}
     <div class="options-grid">${optionsHtml}</div>
     ${locked ? renderExplanation(q.explanation) : ''}
   `;
@@ -831,7 +926,7 @@ function renderTestSheet() {
     }
 
     card.innerHTML = `
-      ${buildQuestionHeader(i + 1, q.question)}
+      ${buildQuestionHeader(i + 1, q.question, q.meta)}
       <div class="options-grid">${optionsHtml}</div>
     `;
     fragment.appendChild(card);
