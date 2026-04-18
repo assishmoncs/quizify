@@ -1,7 +1,9 @@
 // Application State
 const state = {
-  allQuestions: [],
-  questions: [],
+  originalQuestions: [],
+  filteredQuestions: [],
+  filterOptions: {},
+  filterSelections: {},
   currentMode: '',
   quizIndex: 0,
   quizAnswers: [],
@@ -40,6 +42,8 @@ function getDom() {
       uploadSummary: document.getElementById('upload-summary'),
       fileInfo: document.getElementById('file-info'),
       parserDetails: document.getElementById('parser-details'),
+      filterFields: document.getElementById('filter-fields'),
+      filterEmptyMessage: document.getElementById('filter-empty-message'),
       timerDisplay: document.getElementById('timer-display'),
       timerValue: document.getElementById('timer-value'),
       timerInput: document.getElementById('timer-input'),
@@ -123,9 +127,13 @@ function handleFileSelection(event) {
   reader.onload = ({ target }) => {
     try {
       const result = parseJSON(target.result);
-      state.allQuestions = result.questions;
-      state.questions = cloneQuestions(state.allQuestions);
+      state.originalQuestions = result.questions;
+      state.filterOptions = collectFilterOptions(state.originalQuestions);
+      state.filterSelections = createEmptyFilterSelections();
+      state.filteredQuestions = cloneQuestions(state.originalQuestions);
       state.parseMeta = result.meta;
+      renderFilterControls();
+      updateFilterEmptyMessage(false);
       renderLoadedState();
       showSection('mode-section');
     } catch (error) {
@@ -570,18 +578,181 @@ function renderLoadedState() {
   clearMessages();
   d.fileInfo.textContent = buildLoadedText();
   d.parserDetails.innerHTML = buildParserDetailsMarkup();
-  d.uploadSummary.textContent = `${state.questions.length} valid question${state.questions.length === 1 ? '' : 's'} ready from ${state.fileName}`;
+  d.uploadSummary.textContent = `${state.filteredQuestions.length} question${state.filteredQuestions.length === 1 ? '' : 's'} ready from ${state.fileName}`;
 }
 
 function buildLoadedText() {
   const skippedText = state.parseMeta.skipped ? `, ${state.parseMeta.skipped} skipped` : '';
-  return `Loaded ${state.questions.length} question${state.questions.length === 1 ? '' : 's'} from ${state.fileName}${skippedText}.`;
+  const filteredCount = state.filteredQuestions.length;
+  const totalCount = state.originalQuestions.length;
+  const filterText = filteredCount === totalCount ? '' : ` (${filteredCount} match current filters)`;
+  return `Loaded ${totalCount} question${totalCount === 1 ? '' : 's'} from ${state.fileName}${skippedText}${filterText}.`;
 }
 
 function buildParserDetailsMarkup() {
   return state.parseMeta.warnings
     .map((warning) => `<p class="info-note warning-note">${esc(warning)}</p>`)
     .join('');
+}
+
+function createEmptyFilterSelections() {
+  const selections = {};
+  for (const key of CONSTANTS.metadataKeys) {
+    selections[key] = new Set();
+  }
+  return selections;
+}
+
+function collectFilterOptions(questions) {
+  const optionMap = {};
+  for (const key of CONSTANTS.metadataKeys) {
+    optionMap[key] = new Set();
+  }
+
+  for (const question of questions) {
+    for (const key of CONSTANTS.metadataKeys) {
+      const values = getQuestionMetaValues(question, key);
+      for (const value of values) {
+        optionMap[key].add(value);
+      }
+    }
+  }
+
+  const options = {};
+  for (const key of CONSTANTS.metadataKeys) {
+    options[key] = Array.from(optionMap[key]).sort((a, b) => a.localeCompare(b));
+  }
+  return options;
+}
+
+function getQuestionMetaValues(question, key) {
+  const value = question?.meta?.[key];
+  if (Array.isArray(value)) {
+    const result = [];
+    for (const item of value) {
+      if (typeof item === 'string') {
+        const trimmed = item.trim();
+        if (trimmed) result.push(trimmed);
+      }
+    }
+    return result;
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed ? [trimmed] : [];
+  }
+  return [];
+}
+
+function formatFilterLabel(key) {
+  return key.charAt(0).toUpperCase() + key.slice(1);
+}
+
+function renderFilterControls() {
+  const d = getDom();
+  d.filterFields.innerHTML = '';
+  const fragment = document.createDocumentFragment();
+
+  for (const key of CONSTANTS.metadataKeys) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'filter-group';
+    const title = document.createElement('p');
+    title.className = 'filter-label';
+    title.textContent = formatFilterLabel(key);
+    wrapper.appendChild(title);
+
+    const values = state.filterOptions[key] || [];
+    if (!values.length) {
+      const empty = document.createElement('p');
+      empty.className = 'filter-none';
+      empty.textContent = 'No tags';
+      wrapper.appendChild(empty);
+      fragment.appendChild(wrapper);
+      continue;
+    }
+
+    const list = document.createElement('div');
+    list.className = 'filter-options';
+    for (let index = 0; index < values.length; index++) {
+      const value = values[index];
+      const optionId = `filter-${key}-${index}`;
+      const item = document.createElement('label');
+      item.className = 'filter-option';
+      item.innerHTML = `<input type="checkbox" id="${optionId}" ${state.filterSelections[key]?.has(value) ? 'checked' : ''}> <span>${esc(value)}</span>`;
+      item.querySelector('input')?.addEventListener('change', (event) => {
+        if (event.target.checked) {
+          state.filterSelections[key].add(value);
+        } else {
+          state.filterSelections[key].delete(value);
+        }
+      });
+      list.appendChild(item);
+    }
+
+    wrapper.appendChild(list);
+    fragment.appendChild(wrapper);
+  }
+
+  d.filterFields.appendChild(fragment);
+}
+
+function getFilteredQuestionsFromSelections() {
+  const activeKeys = CONSTANTS.metadataKeys.filter((key) => state.filterSelections[key]?.size);
+  if (!activeKeys.length) {
+    return state.originalQuestions;
+  }
+
+  return state.originalQuestions.filter((question) => {
+    for (const key of activeKeys) {
+      const selected = state.filterSelections[key];
+      const values = getQuestionMetaValues(question, key);
+      let match = false;
+      for (const value of values) {
+        if (selected.has(value)) {
+          match = true;
+          break;
+        }
+      }
+      if (!match) {
+        return false;
+      }
+    }
+    return true;
+  });
+}
+
+function updateFilterEmptyMessage(isEmpty) {
+  const d = getDom();
+  d.filterEmptyMessage.classList.toggle('hidden', !isEmpty);
+}
+
+function applyFilters() {
+  if (!state.originalQuestions.length) {
+    return;
+  }
+
+  stopTimer();
+  state.currentMode = '';
+  state.quizIndex = 0;
+  state.quizAnswers = [];
+  state.quizResults = [];
+  state.filteredQuestions = cloneQuestions(getFilteredQuestionsFromSelections());
+  updateFilterEmptyMessage(state.filteredQuestions.length === 0);
+  renderLoadedState();
+  showSection('mode-section');
+}
+
+function clearFilters() {
+  if (!state.originalQuestions.length) {
+    return;
+  }
+
+  state.filterSelections = createEmptyFilterSelections();
+  state.filteredQuestions = cloneQuestions(state.originalQuestions);
+  updateFilterEmptyMessage(false);
+  renderFilterControls();
+  renderLoadedState();
+  showSection('mode-section');
 }
 
 
@@ -658,8 +829,10 @@ function showError(message) {
 
 function resetLoadedData() {
   const d = getDom();
-  state.allQuestions = [];
-  state.questions = [];
+  state.originalQuestions = [];
+  state.filteredQuestions = [];
+  state.filterOptions = {};
+  state.filterSelections = {};
   state.currentMode = '';
   state.quizIndex = 0;
   state.quizAnswers = [];
@@ -669,6 +842,8 @@ function resetLoadedData() {
   stopTimer();
   d.fileInfo.textContent = '';
   d.parserDetails.innerHTML = '';
+  d.filterFields.innerHTML = '';
+  d.filterEmptyMessage.classList.add('hidden');
   d.uploadSummary.textContent = '';
 }
 
@@ -692,16 +867,17 @@ function goBack() {
   state.quizAnswers = [];
   state.quizResults = [];
   state.currentMode = '';
-  showSection(state.allQuestions.length ? 'mode-section' : 'upload-section');
+  showSection(state.originalQuestions.length ? 'mode-section' : 'upload-section');
 }
 
 function resetQuiz() {
   stopTimer();
-  state.questions = cloneQuestions(state.allQuestions);
+  state.filteredQuestions = cloneQuestions(getFilteredQuestionsFromSelections());
   state.quizIndex = 0;
   state.quizAnswers = [];
   state.quizResults = [];
   state.currentMode = '';
+  updateFilterEmptyMessage(state.filteredQuestions.length === 0);
   renderLoadedState();
   showSection('mode-section');
 }
@@ -749,28 +925,38 @@ function shuffleArray(items) {
 }
 
 function shuffleQuestions() {
-  if (!state.questions.length) {
+  if (!state.filteredQuestions.length) {
+    if (state.originalQuestions.length) {
+      showSection('mode-section');
+      updateFilterEmptyMessage(true);
+      return;
+    }
     showSection('upload-section');
     showError('Load a quiz file before shuffling questions.');
     return;
   }
 
-  state.questions = shuffleArray(cloneQuestions(state.questions));
+  state.filteredQuestions = shuffleArray(cloneQuestions(state.filteredQuestions));
   renderLoadedState();
 }
 
 function shuffleOptions() {
-  if (!state.questions.length) {
+  if (!state.filteredQuestions.length) {
+    if (state.originalQuestions.length) {
+      showSection('mode-section');
+      updateFilterEmptyMessage(true);
+      return;
+    }
     showSection('upload-section');
     showError('Load a quiz file before shuffling options.');
     return;
   }
 
-  for (let i = 0; i < state.questions.length; i++) {
-    const q = state.questions[i];
+  for (let i = 0; i < state.filteredQuestions.length; i++) {
+    const q = state.filteredQuestions[i];
     const paired = q.options.map((option, idx) => ({ option, isCorrect: idx === q.correct }));
     shuffleArray(paired);
-    state.questions[i] = {
+    state.filteredQuestions[i] = {
       ...q,
       options: paired.map((entry) => entry.option),
       correct: paired.findIndex((entry) => entry.isCorrect)
@@ -781,7 +967,7 @@ function shuffleOptions() {
 }
 
 function exportResult() {
-  if (!state.questions.length || !state.quizResults.length) {
+  if (!state.filteredQuestions.length || !state.quizResults.length) {
     return;
   }
 
@@ -793,8 +979,8 @@ function exportResult() {
   }
 
   const answers = [];
-  for (let i = 0; i < state.questions.length; i++) {
-    const q = state.questions[i];
+  for (let i = 0; i < state.filteredQuestions.length; i++) {
+    const q = state.filteredQuestions[i];
     const ans = state.quizAnswers[i];
     answers.push({
       question: q.question,
@@ -807,7 +993,7 @@ function exportResult() {
   const payload = {
     fileName: state.fileName,
     mode: state.currentMode,
-    total: state.questions.length,
+    total: state.filteredQuestions.length,
     correct,
     wrong,
     skipped,
@@ -827,7 +1013,7 @@ function exportResult() {
 }
 
 function calcPercent() {
-  const total = state.questions.length;
+  const total = state.filteredQuestions.length;
   if (!total) return 0;
   let correct = 0;
   for (const result of state.quizResults) {
@@ -842,11 +1028,11 @@ function startRead() {
   const d = getDom();
   stopTimer();
   state.currentMode = 'read';
-  d.readCount.textContent = `${state.questions.length} question${state.questions.length === 1 ? '' : 's'}`;
+  d.readCount.textContent = `${state.filteredQuestions.length} question${state.filteredQuestions.length === 1 ? '' : 's'}`;
 
   const fragment = document.createDocumentFragment();
-  for (let i = 0; i < state.questions.length; i++) {
-    const q = state.questions[i];
+  for (let i = 0; i < state.filteredQuestions.length; i++) {
+    const q = state.filteredQuestions[i];
     const card = document.createElement('article');
     card.className = 'read-question';
     let optionsHtml = '';
@@ -873,16 +1059,16 @@ function startQuiz() {
   stopTimer();
   state.currentMode = 'quiz';
   state.quizIndex = 0;
-  state.quizAnswers = new Array(state.questions.length).fill(null);
-  state.quizResults = new Array(state.questions.length).fill(null);
+  state.quizAnswers = new Array(state.filteredQuestions.length).fill(null);
+  state.quizResults = new Array(state.filteredQuestions.length).fill(null);
   renderQuizQuestion();
   showSection('quiz-section');
 }
 
 function renderQuizQuestion() {
   const d = getDom();
-  const q = state.questions[state.quizIndex];
-  const total = state.questions.length;
+  const q = state.filteredQuestions[state.quizIndex];
+  const total = state.filteredQuestions.length;
   const selectedAnswer = state.quizAnswers[state.quizIndex];
   const locked = selectedAnswer !== null;
 
@@ -911,7 +1097,7 @@ function renderQuizQuestion() {
 }
 
 function quizAnswer(index) {
-  const q = state.questions[state.quizIndex];
+  const q = state.filteredQuestions[state.quizIndex];
   state.quizAnswers[state.quizIndex] = index;
   state.quizResults[state.quizIndex] = index === q.correct ? 'correct' : 'wrong';
   renderQuizQuestion();
@@ -924,7 +1110,7 @@ function quizSkip() {
 }
 
 function quizNext() {
-  if (state.quizIndex < state.questions.length - 1) {
+  if (state.quizIndex < state.filteredQuestions.length - 1) {
     state.quizIndex++;
     renderQuizQuestion();
   } else {
@@ -936,8 +1122,8 @@ function startTest() {
   if (!ensureQuestionsLoaded()) return;
 
   state.currentMode = 'test';
-  state.quizAnswers = new Array(state.questions.length).fill(null);
-  state.quizResults = new Array(state.questions.length).fill(null);
+  state.quizAnswers = new Array(state.filteredQuestions.length).fill(null);
+  state.quizResults = new Array(state.filteredQuestions.length).fill(null);
   startTimerIfSet();
   renderTestSheet();
   showSection('test-section');
@@ -947,8 +1133,8 @@ function renderTestSheet() {
   const d = getDom();
   const fragment = document.createDocumentFragment();
 
-  for (let i = 0; i < state.questions.length; i++) {
-    const q = state.questions[i];
+  for (let i = 0; i < state.filteredQuestions.length; i++) {
+    const q = state.filteredQuestions[i];
     const selectedAnswer = state.quizAnswers[i];
     const card = document.createElement('article');
     card.className = `test-card${selectedAnswer !== null ? ' answered' : ''}`;
@@ -983,7 +1169,7 @@ function updateTestProgress() {
   for (const ans of state.quizAnswers) {
     if (ans !== null) answered++;
   }
-  const total = state.questions.length;
+  const total = state.filteredQuestions.length;
   d.testProgress.textContent = `${answered} of ${total} answered`;
   d.testFill.style.width = total ? `${(answered / total) * 100}%` : '0%';
 }
@@ -995,8 +1181,8 @@ function testSubmit(force = false) {
 
   stopTimer();
 
-  for (let i = 0; i < state.questions.length; i++) {
-    const q = state.questions[i];
+  for (let i = 0; i < state.filteredQuestions.length; i++) {
+    const q = state.filteredQuestions[i];
     if (state.quizAnswers[i] === null) {
       state.quizResults[i] = 'skipped';
     } else if (state.quizAnswers[i] === q.correct) {
@@ -1067,7 +1253,7 @@ function showResult(mode) {
     else if (result === 'skipped') skipped++;
   }
 
-  const total = state.questions.length;
+  const total = state.filteredQuestions.length;
   const percent = total ? Math.round((correct / total) * 100) : 0;
 
   d.resultPercent.textContent = `${percent}%`;
@@ -1083,8 +1269,8 @@ function showResult(mode) {
   header.textContent = 'Answer Review';
   fragment.appendChild(header);
 
-  for (let i = 0; i < state.questions.length; i++) {
-    const q = state.questions[i];
+  for (let i = 0; i < state.filteredQuestions.length; i++) {
+    const q = state.filteredQuestions[i];
     const resultState = state.quizResults[i] || 'skipped';
     const userAnswerIndex = state.quizAnswers[i];
     const userAnswer = userAnswerIndex !== null && userAnswerIndex !== -1 && userAnswerIndex >= 0
@@ -1118,7 +1304,12 @@ function startMode(mode) {
 }
 
 function ensureQuestionsLoaded() {
-  if (state.questions.length) return true;
+  if (state.filteredQuestions.length) return true;
+  if (state.originalQuestions.length) {
+    showSection('mode-section');
+    updateFilterEmptyMessage(true);
+    return false;
+  }
   showSection('upload-section');
   showError('Upload a quiz JSON file before starting a mode.');
   return false;

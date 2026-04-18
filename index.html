@@ -107,6 +107,14 @@
             <div class="mode-summary" id="parser-details"></div>
           </div>
           <h2>Choose how you want to use this quiz</h2>
+          <div id="filter-panel" class="filter-panel">
+            <div id="filter-fields" class="filter-fields"></div>
+            <div class="filter-actions">
+              <button class="util-btn" type="button" id="apply-filter-btn" onclick="applyFilters()">Apply Filter</button>
+              <button class="util-btn" type="button" id="clear-filter-btn" onclick="clearFilters()">Clear Filter</button>
+            </div>
+            <p id="filter-empty-message" class="filter-empty-message hidden">No questions found for selected filters</p>
+          </div>
           <div class="mode-buttons">
             <button class="mode-btn" type="button" id="btn-read" onclick="startMode('read')">
               <span class="mode-icon" aria-hidden="true">
