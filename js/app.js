@@ -620,10 +620,7 @@ function collectFilterOptions(questions) {
 
   const options = {};
   for (const key of CONSTANTS.metadataKeys) {
-    options[key] = Array.from(optionMap[key]).sort((a, b) => {
-      if (a === b) return 0;
-      return a < b ? -1 : 1;
-    });
+    options[key] = Array.from(optionMap[key]).sort();
   }
   return options;
 }
@@ -767,7 +764,7 @@ function clearFilters() {
 
 
 
-function buildQuestionHeader(questionNumber, questionText, meta) {
+function buildQuestionHeader(questionNumber, questionText, meta = null) {
   const metaMarkup = buildQuestionMetaMarkup(meta);
   return `
     <div class="q-number">Question ${questionNumber}</div>
@@ -783,16 +780,16 @@ function buildQuestionMetaMarkup(meta) {
   }
 
   for (const key of CONSTANTS.metadataKeys) {
-    const value = meta[key];
+        const value = meta[key];
     if (Array.isArray(value)) {
       for (const item of value) {
-        const tag = sanitizeTag(item);
+        const tag = trimTag(item);
         if (tag) {
           tags.push(tag);
         }
       }
     } else {
-      const tag = sanitizeTag(value);
+      const tag = trimTag(value);
       if (tag) {
         tags.push(tag);
       }
@@ -806,7 +803,7 @@ function buildQuestionMetaMarkup(meta) {
   return `<div class="q-meta-tags">${tags.map((tag) => `<span class="q-meta-tag">${esc(tag)}</span>`).join('')}</div>`;
 }
 
-function sanitizeTag(value) {
+function trimTag(value) {
   if (typeof value !== 'string') {
     return '';
   }
@@ -895,7 +892,7 @@ function resetQuiz() {
 function cloneQuestions(source) {
   return source.map((question) => ({
     ...question,
-    options: question.options.map((option) => cloneMetaValue(option)),
+    options: question.options.map((option) => cloneMetaFallback(option)),
     meta: cloneMeta(question.meta)
   }));
 }
@@ -904,22 +901,25 @@ function cloneMeta(meta) {
   if (!meta || typeof meta !== 'object') {
     return {};
   }
+  if (typeof structuredClone === 'function') {
+    return structuredClone(meta);
+  }
 
   const cloned = {};
   for (const key of Object.keys(meta)) {
-    cloned[key] = cloneMetaValue(meta[key]);
+    cloned[key] = cloneMetaFallback(meta[key]);
   }
   return cloned;
 }
 
-function cloneMetaValue(value) {
+function cloneMetaFallback(value) {
   if (Array.isArray(value)) {
-    return value.map((entry) => cloneMetaValue(entry));
+    return value.map((entry) => cloneMetaFallback(entry));
   }
   if (value && typeof value === 'object') {
     const cloned = {};
     for (const [key, nestedValue] of Object.entries(value)) {
-      cloned[key] = cloneMetaValue(nestedValue);
+      cloned[key] = cloneMetaFallback(nestedValue);
     }
     return cloned;
   }
