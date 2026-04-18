@@ -620,7 +620,10 @@ function collectFilterOptions(questions) {
 
   const options = {};
   for (const key of CONSTANTS.metadataKeys) {
-    options[key] = Array.from(optionMap[key]).sort((a, b) => a.localeCompare(b));
+    options[key] = Array.from(optionMap[key]).sort((a, b) => {
+      if (a === b) return 0;
+      return a < b ? -1 : 1;
+    });
   }
   return options;
 }
@@ -665,7 +668,7 @@ function renderFilterControls() {
     if (!values.length) {
       const empty = document.createElement('p');
       empty.className = 'filter-none';
-      empty.textContent = 'No tags';
+      empty.textContent = 'None available';
       wrapper.appendChild(empty);
       fragment.appendChild(wrapper);
       continue;
@@ -678,8 +681,15 @@ function renderFilterControls() {
       const optionId = `filter-${key}-${index}`;
       const item = document.createElement('label');
       item.className = 'filter-option';
-      item.innerHTML = `<input type="checkbox" id="${optionId}" ${state.filterSelections[key]?.has(value) ? 'checked' : ''}> <span>${esc(value)}</span>`;
-      item.querySelector('input')?.addEventListener('change', (event) => {
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.id = optionId;
+      input.checked = state.filterSelections[key]?.has(value) || false;
+      const text = document.createElement('span');
+      text.textContent = value;
+      item.appendChild(input);
+      item.appendChild(text);
+      input.addEventListener('change', (event) => {
         if (event.target.checked) {
           state.filterSelections[key].add(value);
         } else {
@@ -885,7 +895,7 @@ function resetQuiz() {
 function cloneQuestions(source) {
   return source.map((question) => ({
     ...question,
-    options: [...question.options],
+    options: question.options.map((option) => cloneMetaValue(option)),
     meta: cloneMeta(question.meta)
   }));
 }
