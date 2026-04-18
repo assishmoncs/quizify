@@ -630,7 +630,7 @@ function sanitizeTag(value) {
     return '';
   }
   const trimmed = value.trim();
-  return trimmed || '';
+  return trimmed;
 }
 
 function buildReviewMarkup(state, index, questionText, userAnswer, correctAnswer, explanation) {
@@ -721,16 +721,23 @@ function cloneMeta(meta) {
 
   const cloned = {};
   for (const key of Object.keys(meta)) {
-    const value = meta[key];
-    if (Array.isArray(value)) {
-      cloned[key] = [...value];
-    } else if (value && typeof value === 'object') {
-      cloned[key] = { ...value };
-    } else {
-      cloned[key] = value;
-    }
+    cloned[key] = cloneMetaValue(meta[key]);
   }
   return cloned;
+}
+
+function cloneMetaValue(value) {
+  if (Array.isArray(value)) {
+    return value.map((entry) => cloneMetaValue(entry));
+  }
+  if (value && typeof value === 'object') {
+    const cloned = {};
+    for (const [key, nestedValue] of Object.entries(value)) {
+      cloned[key] = cloneMetaValue(nestedValue);
+    }
+    return cloned;
+  }
+  return value;
 }
 
 function shuffleArray(items) {
