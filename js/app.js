@@ -19,6 +19,7 @@ const CONSTANTS = {
   questionTextKeys: ['question', 'q', 'ques', 'text', 'prompt', 'title', 'Question'],
   explanationKeys: ['explanation', 'explain', 'rationale', 'reason', 'note', 'details'],
   metadataKeys: ['topic', 'difficulty', 'tag', 'chapter', 'module', 'subject'],
+  metadataTextKeys: ['text', 'label', 'name', 'title', 'value'],
   answerKeys: [
     'correct', 'answer', 'correct_answer', 'answer_index', 'answer_letter', 'answer_text',
     'correctAnswer', 'correctIndex', 'correctOption', 'correct_choice', 'correctChoice',
@@ -496,16 +497,6 @@ function getFirstPresentValue(source, keys) {
   return undefined;
 }
 
-function getValueByCaseInsensitiveKey(source, targetKey) {
-  const target = targetKey.toLowerCase();
-  for (const [key, value] of Object.entries(source)) {
-    if (key.toLowerCase() === target) {
-      return value;
-    }
-  }
-  return undefined;
-}
-
 function normalizeMetaValue(value) {
   if (value === undefined || value === null) {
     return null;
@@ -525,7 +516,7 @@ function normalizeMetaValue(value) {
   }
 
   if (typeof value === 'object') {
-    const text = getFirstPresentValue(value, ['text', 'label', 'name', 'title', 'value']);
+    const text = getFirstPresentValue(value, CONSTANTS.metadataTextKeys);
     if (text !== undefined && text !== null) {
       const normalized = String(text).trim();
       return normalized ? normalized : null;
@@ -537,8 +528,13 @@ function normalizeMetaValue(value) {
 
 function extractQuestionMeta(item) {
   const meta = {};
+  const lowerKeyMap = {};
+  for (const [key, value] of Object.entries(item)) {
+    lowerKeyMap[key.toLowerCase()] = value;
+  }
+
   for (const key of CONSTANTS.metadataKeys) {
-    const value = getValueByCaseInsensitiveKey(item, key);
+    const value = lowerKeyMap[key];
     const normalized = normalizeMetaValue(value);
     if (normalized !== null) {
       meta[key] = normalized;
@@ -595,18 +591,10 @@ function buildQuestionMetaMarkup(meta) {
     const value = meta[key];
     if (Array.isArray(value)) {
       for (const item of value) {
-        if (typeof item === 'string') {
-          const trimmedItem = item.trim();
-          if (trimmedItem) {
-            tags.push(trimmedItem);
-          }
-        }
+        addNonEmptyTag(tags, item);
       }
-    } else if (typeof value === 'string') {
-      const trimmedValue = value.trim();
-      if (trimmedValue) {
-        tags.push(trimmedValue);
-      }
+    } else {
+      addNonEmptyTag(tags, value);
     }
   }
 
@@ -615,6 +603,16 @@ function buildQuestionMetaMarkup(meta) {
   }
 
   return `<div class="q-meta-tags">${tags.map((tag) => `<span class="q-meta-tag">${esc(tag)}</span>`).join('')}</div>`;
+}
+
+function addNonEmptyTag(target, value) {
+  if (typeof value !== 'string') {
+    return;
+  }
+  const trimmed = value.trim();
+  if (trimmed) {
+    target.push(trimmed);
+  }
 }
 
 function buildReviewMarkup(state, index, questionText, userAnswer, correctAnswer, explanation) {
