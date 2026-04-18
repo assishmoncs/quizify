@@ -621,6 +621,68 @@ body.immersive-mode .hero-panel {
   color: var(--skip);
 }
 
+.filter-panel {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--field-strong);
+}
+
+.filter-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 18px;
+}
+
+.filter-group {
+  min-width: 0;
+}
+
+.filter-label {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-soft);
+}
+
+.filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+
+.filter-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84rem;
+  color: var(--text);
+}
+
+.filter-option input {
+  margin: 0;
+}
+
+.filter-none {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-faint);
+}
+
+.filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.filter-empty-message {
+  margin: 12px 0 0;
+  font-size: 0.88rem;
+  color: var(--wrong);
+}
+
 .mode-buttons {
   display: grid;
   gap: 16px;
@@ -797,6 +859,26 @@ body.immersive-mode .hero-panel {
 .q-number {
   margin-bottom: 8px;
   color: var(--text-faint);
+}
+
+.q-meta-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.q-meta-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent-strong);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.2;
 }
 
 .q-text {
@@ -1082,6 +1164,10 @@ body.immersive-mode .hero-panel {
   .info-chip-row {
     justify-content: flex-start;
     text-align: left;
+  }
+
+  .filter-fields {
+    grid-template-columns: 1fr;
   }
 
   .timer-config {
