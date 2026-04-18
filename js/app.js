@@ -585,9 +585,12 @@ function buildLoadedText() {
   const skippedText = state.parseMeta.skipped ? `, ${state.parseMeta.skipped} skipped` : '';
   const filteredCount = state.filteredQuestions.length;
   const totalCount = state.originalQuestions.length;
-  const filterText = filteredCount === totalCount
-    ? ''
-    : ` (${filteredCount} question${filteredCount === 1 ? '' : 's'} match${filteredCount === 1 ? 'es' : ''} current filters)`;
+  let filterText = '';
+  if (filteredCount !== totalCount) {
+    filterText = filteredCount === 1
+      ? ' (1 question matches current filters)'
+      : ` (${filteredCount} questions match current filters)`;
+  }
   return `Loaded ${totalCount} question${totalCount === 1 ? '' : 's'} from ${state.fileName}${skippedText}${filterText}.`;
 }
 
