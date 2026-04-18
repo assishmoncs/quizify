@@ -503,10 +503,24 @@ function normalizeMetaValue(value) {
   }
 
   if (Array.isArray(value)) {
-    const values = value
-      .map(normalizeMetaValue)
-      .flat()
-      .filter((entry) => typeof entry === 'string' && entry.length);
+    const values = [];
+    const queue = [...value];
+
+    while (queue.length) {
+      const entry = queue.shift();
+      if (Array.isArray(entry)) {
+        queue.push(...entry);
+        continue;
+      }
+
+      const normalized = normalizeMetaValue(entry);
+      if (typeof normalized === 'string') {
+        values.push(normalized);
+      } else if (Array.isArray(normalized)) {
+        values.push(...normalized);
+      }
+    }
+
     return values.length ? values : null;
   }
 
@@ -591,10 +605,16 @@ function buildQuestionMetaMarkup(meta) {
     const value = meta[key];
     if (Array.isArray(value)) {
       for (const item of value) {
-        addNonEmptyTag(tags, item);
+        const tag = sanitizeTag(item);
+        if (tag) {
+          tags.push(tag);
+        }
       }
     } else {
-      addNonEmptyTag(tags, value);
+      const tag = sanitizeTag(value);
+      if (tag) {
+        tags.push(tag);
+      }
     }
   }
 
@@ -605,14 +625,12 @@ function buildQuestionMetaMarkup(meta) {
   return `<div class="q-meta-tags">${tags.map((tag) => `<span class="q-meta-tag">${esc(tag)}</span>`).join('')}</div>`;
 }
 
-function addNonEmptyTag(target, value) {
+function sanitizeTag(value) {
   if (typeof value !== 'string') {
-    return;
+    return '';
   }
   const trimmed = value.trim();
-  if (trimmed) {
-    target.push(trimmed);
-  }
+  return trimmed || '';
 }
 
 function buildReviewMarkup(state, index, questionText, userAnswer, correctAnswer, explanation) {
@@ -704,7 +722,13 @@ function cloneMeta(meta) {
   const cloned = {};
   for (const key of Object.keys(meta)) {
     const value = meta[key];
-    cloned[key] = Array.isArray(value) ? [...value] : value;
+    if (Array.isArray(value)) {
+      cloned[key] = [...value];
+    } else if (value && typeof value === 'object') {
+      cloned[key] = { ...value };
+    } else {
+      cloned[key] = value;
+    }
   }
   return cloned;
 }
