@@ -780,7 +780,7 @@ function buildQuestionMetaMarkup(meta) {
   }
 
   for (const key of CONSTANTS.metadataKeys) {
-        const value = meta[key];
+    const value = meta[key];
     if (Array.isArray(value)) {
       for (const item of value) {
         const tag = trimTag(item);
@@ -807,8 +807,7 @@ function trimTag(value) {
   if (typeof value !== 'string') {
     return '';
   }
-  const trimmed = value.trim();
-  return trimmed;
+  return value.trim();
 }
 
 function buildReviewMarkup(state, index, questionText, userAnswer, correctAnswer, explanation) {
