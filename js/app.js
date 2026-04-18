@@ -595,12 +595,18 @@ function buildQuestionMetaMarkup(meta) {
     const value = meta[key];
     if (Array.isArray(value)) {
       for (const item of value) {
-        if (typeof item === 'string' && item.trim()) {
-          tags.push(item.trim());
+        if (typeof item === 'string') {
+          const trimmedItem = item.trim();
+          if (trimmedItem) {
+            tags.push(trimmedItem);
+          }
         }
       }
-    } else if (typeof value === 'string' && value.trim()) {
-      tags.push(value.trim());
+    } else if (typeof value === 'string') {
+      const trimmedValue = value.trim();
+      if (trimmedValue) {
+        tags.push(trimmedValue);
+      }
     }
   }
 
