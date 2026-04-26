@@ -42,6 +42,7 @@ function getDom() {
       uploadSummary: document.getElementById('upload-summary'),
       fileInfo: document.getElementById('file-info'),
       parserDetails: document.getElementById('parser-details'),
+      filterPanel: document.getElementById('filter-panel'),
       filterFields: document.getElementById('filter-fields'),
       filterEmptyMessage: document.getElementById('filter-empty-message'),
       timerDisplay: document.getElementById('timer-display'),
@@ -653,9 +654,20 @@ function formatFilterLabel(key) {
   return key.charAt(0).toUpperCase() + key.slice(1);
 }
 
+function hasAnyFilterOptions() {
+  return CONSTANTS.metadataKeys.some((key) => (state.filterOptions[key] || []).length > 0);
+}
+
 function renderFilterControls() {
   const d = getDom();
   d.filterFields.innerHTML = '';
+  const showFilterPanel = hasAnyFilterOptions();
+  d.filterPanel.classList.toggle('hidden', !showFilterPanel);
+  if (!showFilterPanel) {
+    d.filterEmptyMessage.classList.add('hidden');
+    return;
+  }
+
   const fragment = document.createDocumentFragment();
 
   for (const key of CONSTANTS.metadataKeys) {
@@ -846,6 +858,7 @@ function resetLoadedData() {
   stopTimer();
   d.fileInfo.textContent = '';
   d.parserDetails.innerHTML = '';
+  d.filterPanel.classList.add('hidden');
   d.filterFields.innerHTML = '';
   d.filterEmptyMessage.classList.add('hidden');
   d.uploadSummary.textContent = '';
